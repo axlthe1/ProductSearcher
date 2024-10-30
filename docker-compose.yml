@@ -1,0 +1,58 @@
+﻿services:
+  rabbitmq:
+    container_name: rabbitmq
+    hostname: rabbitmq
+    networks:
+      - myapp_net
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672" # RabbitMQ default port
+      - "15672:15672" # RabbitMQ management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+  ProductSearchApi:
+    container_name: product-search-api
+    hostname: searcher
+    depends_on:
+      - rabbitmq
+    networks:
+      - myapp_net
+    image: product-search-api
+    build:
+      context: .
+      dockerfile: .\ProductSearcher.ProductSearcherApi\Dockerfile
+    ports:
+      - "8080:8080"
+  SomeOther:
+    container_name: worker-other
+    hostname: other
+    depends_on:
+      rabbitmq:
+        condition: service_started
+    restart: on-failure
+    networks:
+      - myapp_net
+    image: worker-someother
+    build:
+      context: .
+      dockerfile: .\SomeOtherWorker\Dockerfile
+  OtherWorker:
+    hostname: bigguy
+    container_name: worker-other
+    depends_on:
+      rabbitmq:
+        condition: service_started
+    restart: on-failure
+    networks:
+      - myapp_net
+    image: worker-other
+    build:
+      context: .
+      dockerfile: .\otherWorker\Dockerfile
+  
+networks:
+  myapp_net:
+    name: myapp_net
+    
+    
